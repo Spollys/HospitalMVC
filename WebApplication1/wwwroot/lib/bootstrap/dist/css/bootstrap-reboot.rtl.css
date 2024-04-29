@@ -5,6 +5,8 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)
  */
+
+/* Base */
 *,
 *::before,
 *::after {
@@ -28,6 +30,7 @@ body {
   background-color: var(--bs-body-bg);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  user-select: text;
 }
 
 hr {
@@ -204,6 +207,9 @@ pre {
   margin-bottom: 1rem;
   overflow: auto;
   font-size: 0.875em;
+  tab-size: 4;
+  white-space: pre-wrap;
+  font-variant-east-asian: full-width;
 }
 pre code {
   font-size: inherit;
@@ -226,6 +232,7 @@ kbd {
   color: #fff;
   background-color: #212529;
   border-radius: 0.2rem;
+  user-select: all;
 }
 kbd kbd {
   padding: 0;
@@ -252,6 +259,7 @@ caption {
   padding-bottom: 0.5rem;
   color: #6c757d;
   text-align: right;
+  overflow-wrap: break-word;
 }
 
 th {
@@ -349,6 +357,7 @@ legend {
   margin-bottom: 0.5rem;
   font-size: calc(1.275rem + 0.3vw);
   line-height: inherit;
+  overflow-wrap: break-word;
 }
 @media (min-width: 1200px) {
   legend {
