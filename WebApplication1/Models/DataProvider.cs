@@ -1,6 +1,10 @@
-﻿using System.Diagnostics;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Hospital.Models;
 
@@ -18,31 +22,26 @@ public class DataProvider
     private const string VisitsFileName = "Visits.csv";
     private static object _lock = new();
 
-    public static List<Doctor> Doctors
+    public static async Task<List<Doctor>> GetDoctorsAsync()
     {
-        get
+        if (_doctors is null)
         {
-            if (_doctors is null)
+            lock (_lock)
             {
-                lock (_lock)
-                {
-                    _doctors ??= ReadData<Doctor>(DoctorsFileName);
-                }
+                _doctors ??= await ReadDataAsync<Doctor>(DoctorsFileName);
             }
-
-            return _doctors;
         }
+
+        return _doctors;
     }
-    //public static List<Doctor> Doctors => _doctors ??= ReadData<Doctor>(DoctorsFileName);
 
-    // TODO: Synchronization of ReadData invocation like it done in Doctors
-    public static List< Patient> Patients => _patients ??= ReadData<Patient>(PatientsFileName);
+    public static List<Patient> Patients => _patients ??= ReadData<Patient>(PatientsFileName);
 
-        public static Dictionary<int, Doctor> DoctorsDictionary =>
-    _doctorsDictionary ??= Doctors.ToDictionary(d => d.Id, d => d);
+    public static Dictionary<int, Doctor> DoctorsDictionary =>
+        _doctorsDictionary ??= _doctors.ToDictionary(d => d.Id, d => d);
 
     public static Dictionary<int, Patient> PatientsDictionary =>
-        _patientsDictionary ??= Patients.ToDictionary(p => p.Id, p => p);
+        _patientsDictionary ??= _patients.ToDictionary(p => p.Id, p => p);
 
     public static List<Visit> Visits
     {
@@ -51,8 +50,8 @@ public class DataProvider
             if (_visits == null)
             {
                 _visits = ReadData<Visit>(VisitsFileName);
-                var doctorsSet = Doctors.Select(d => d.Id).ToHashSet();
-                var patientsSet = Patients.Select(p => p.Id).ToHashSet();
+                var doctorsSet = _doctors.Select(d => d.Id).ToHashSet();
+                var patientsSet = _patients.Select(p => p.Id).ToHashSet();
                 _visits = _visits.Where(v => doctorsSet.Contains(v.DoctorId) && patientsSet.Contains(v.PatientId))
                     .ToList();
             }
@@ -61,8 +60,7 @@ public class DataProvider
         }
     }
 
-
-    public static List<T> ReadData<T>(string fileName, string? dataDir = null, string separator = ";")
+    public static async Task<List<T>> ReadDataAsync<T>(string fileName, string? dataDir = null, string separator = ";")
         where T : ICSVParser<T>
     {
         var items = new List<T>();
@@ -71,11 +69,10 @@ public class DataProvider
         int lineNumber = 0;
         var fullName = Path.Combine(dataDir, fileName);
         Trace.WriteLine($"{DateTime.Now:HH:mm:ss}: {fullName} load started");
-        // Bug? Next indent does not work
-        //Trace.Indent();
         try
         {
-            foreach (var line in File.ReadAllLines(fullName))
+            var lines = await File.ReadAllLinesAsync(fullName);
+            foreach (var line in lines)
             {
                 lineNumber++;
                 try
@@ -95,7 +92,6 @@ public class DataProvider
         }
         finally
         {
-            //Trace.Unindent();
             Trace.WriteLine($"{DateTime.Now:HH:mm:ss}: {fullName} load finished");
         }
 
@@ -119,12 +115,8 @@ public class DataProvider
                 {
                     ageDict[visit.DoctorId] = GetAge(PatientsDictionary[visit.PatientId].BirthDate);
                 }
-
-                ageDict[visit.DoctorId] = Math.Max(ageDict.GetValueOrDefault(visit.DoctorId),
-                    GetAge(PatientsDictionary[visit.PatientId].BirthDate));
             }
         }
-
 
         foreach (var doctor in Doctors)
         {
