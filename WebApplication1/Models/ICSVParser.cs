@@ -1,6 +1,6 @@
-﻿namespace Hospital.Models;
+namespace Hospital.Models;
 
-public interface ICSVParser<out T>
+public interface ICSVParser<T>
 {
-    public static abstract T Parse(string s, string separator);
+    T Parse(string s, string separator);
 }
